@@ -1,15 +1,47 @@
+import * as Location from 'expo-location';
 import React from "react";
 import { View, Text, Dimensions, StyleSheet, ScrollView } from "react-native"
+import { useState, useEffect } from "react";
+// import { useEffect } from 'react/cjs/react.development';
+// import { useState } from 'react/cjs/react.development';
 
 // 화면 크기를 받아옴
 // ES6. width값을 가져온 후 이름을 SCREEN_WIDTH로 바꿈
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function App() {
+  const [city, setCity] = useState("Loading...");
+  const [location, setLocation] = useState(null);
+  const [ok, setOk] = useState(true);
+
+  // 권한
+  const ask = async() => {
+    // requestPermissionsAsync는 deprecated, 대신 requestForegroundPermissionsAsync(앱 사용 중 일때만 위치를 사용)
+    // granted는 object. 허용시 {"canAskAgain": bool, "expires": never, "granted": bool, "status": "granted"}
+    const {granted} = await Location.requestForegroundPermissionsAsync();
+    // 허용되지 않았다면 state변경
+    if(!granted) {
+      setOk(false);
+    }
+
+    // 위치. accuracy는 정확도를 지정(1~6)
+    const {coords:{latitude, longitude}} = await Location.getCurrentPositionAsync({accuracy:5});
+    const location = await Location.reverseGeocodeAsync(
+      {latitude, longitude},
+      {useGoogleMaps: false}
+    );
+
+    // 불러온 객체에서 도시 이름을 City의 state값으로 변경
+    setCity(location[0].city);
+  }
+  // 이 컴포넌트가 마운트 됐을 때
+  useEffect(() => {
+    ask();
+  })
   return (
     <View style={styles.container}>
       <View style={styles.city}>
-        <Text style={styles.cityName}>Seoul</Text>
+        <Text style={styles.cityName}>{city}</Text>
       </View>
       {/* - ScrollView is native scroll view provided by OS(customizable)
           - horizontal props를 추가하여 가로 스크롤이 되게끔
