@@ -1,6 +1,6 @@
 import * as Location from 'expo-location';
 import React from "react";
-import { View, Text, Dimensions, StyleSheet, ScrollView } from "react-native"
+import { View, Text, Dimensions, ActivityIndicator, StyleSheet, ScrollView } from "react-native"
 import { useState, useEffect } from "react";
 // import { useEffect } from 'react/cjs/react.development';
 // import { useState } from 'react/cjs/react.development';
@@ -9,13 +9,16 @@ import { useState, useEffect } from "react";
 // ES6. width값을 가져온 후 이름을 SCREEN_WIDTH로 바꿈
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
+// 개발시에만 이렇게 쓰고, Dotenv로 빼자 12:39
+const API_KEY = '';
+
 export default function App() {
   const [city, setCity] = useState("Loading...");
-  const [location, setLocation] = useState(null);
+  const [days, setDays] = useState([]);
   const [ok, setOk] = useState(true);
 
   // 권한
-  const ask = async() => {
+  const getWeather = async() => {
     // requestPermissionsAsync는 deprecated, 대신 requestForegroundPermissionsAsync(앱 사용 중 일때만 위치를 사용)
     // granted는 object. 허용시 {"canAskAgain": bool, "expires": never, "granted": bool, "status": "granted"}
     const {granted} = await Location.requestForegroundPermissionsAsync();
@@ -33,10 +36,15 @@ export default function App() {
 
     // 불러온 객체에서 도시 이름을 City의 state값으로 변경
     setCity(location[0].city);
+    // const response = await fetch(`https://api.openweathermap.org/data/3.0/onecall?lat=${latitude}&lon=${longitude}&exclude={alerts}&appid=${API_KEY}`);
+    const response = await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${latitude}&lon=${longitude}&exclude={alerts}&appid=${API_KEY}`)
+    // API통신으로 받은 json을 콘솔로 보기에는 상당히 불편한데 이때 로컬호스트의 19002번으로 접속하면 관리자 페이지에서 편하게 볼 수 있다.
+    const json = await response.json();
+    setDays(json.daily);
   }
   // 이 컴포넌트가 마운트 됐을 때
   useEffect(() => {
-    ask();
+    getWeather();
   })
   return (
     <View style={styles.container}>
@@ -58,25 +66,22 @@ export default function App() {
       <ScrollView 
         pagingEnabled
         horizontal
+        ActivityIndicator
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.weather}
       >
+        {days.length === 0 ? (
         <View style={styles.day}>
-          <Text style={styles.temp}>27</Text>
-          <Text style={styles.description}>Sunny</Text>
+            <ActivityIndicator color="white" size="large" style={{marginTop:10}}></ActivityIndicator>
         </View>
-        <View style={styles.day}>
-          <Text style={styles.temp}>27</Text>
-          <Text style={styles.description}>Sunny</Text>
-        </View>
-        <View style={styles.day}>
-          <Text style={styles.temp}>27</Text>
-          <Text style={styles.description}>Sunny</Text>
-        </View>
-        <View style={styles.day}>
-          <Text style={styles.temp}>27</Text>
-          <Text style={styles.description}>Sunny</Text>
-        </View>
+        ) : (
+          days.map((day, index) => 
+            <View key={index} styles={styles.day}>
+              <Text style={styles.temp}>{day.temp.day}</Text>
+              <Text style={styles.description}>{day.weather[0].main}</Text>
+            </View>
+          )
+        )}
       </ScrollView>
     </View>
   );
