@@ -2,15 +2,13 @@ import * as Location from 'expo-location';
 import React from "react";
 import { View, Text, Dimensions, ActivityIndicator, StyleSheet, ScrollView } from "react-native"
 import { useState, useEffect } from "react";
-// import { useEffect } from 'react/cjs/react.development';
-// import { useState } from 'react/cjs/react.development';
 
 // 화면 크기를 받아옴
 // ES6. width값을 가져온 후 이름을 SCREEN_WIDTH로 바꿈
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // 개발시에만 이렇게 쓰고, Dotenv로 빼자 12:39
-const API_KEY = '';
+const API_KEY = '35451123a8d89808b907fd45fcd13831';
 
 export default function App() {
   const [city, setCity] = useState("Loading...");
@@ -36,8 +34,9 @@ export default function App() {
 
     // 불러온 객체에서 도시 이름을 City의 state값으로 변경
     setCity(location[0].city);
-    // const response = await fetch(`https://api.openweathermap.org/data/3.0/onecall?lat=${latitude}&lon=${longitude}&exclude={alerts}&appid=${API_KEY}`);
-    const response = await fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${latitude}&lon=${longitude}&exclude={alerts}&appid=${API_KEY}`)
+    const response = await fetch(
+      `https://api.openweathermap.org/data/2.5/onecall?lat=${latitude}&lon=${longitude}&exclude={alerts}&appid=${API_KEY}&units=metric`
+    );
     // API통신으로 받은 json을 콘솔로 보기에는 상당히 불편한데 이때 로컬호스트의 19002번으로 접속하면 관리자 페이지에서 편하게 볼 수 있다.
     const json = await response.json();
     setDays(json.daily);
@@ -72,13 +71,18 @@ export default function App() {
       >
         {days.length === 0 ? (
         <View style={styles.day}>
-            <ActivityIndicator color="white" size="large" style={{marginTop:10}}></ActivityIndicator>
+            <ActivityIndicator
+              color="white"
+              size="large"
+              style={{marginTop:10}}
+            />
         </View>
         ) : (
           days.map((day, index) => 
             <View key={index} styles={styles.day}>
-              <Text style={styles.temp}>{day.temp.day}</Text>
+              <Text style={styles.temp}>{parseFloat(day.temp.day).toFixed(1)}</Text>
               <Text style={styles.description}>{day.weather[0].main}</Text>
+              <Text style={styles.tinyText}>{day.weather[0].description}</Text>
             </View>
           )
         )}
@@ -100,12 +104,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cityName: {
-    fontSize: 68,
+    fontSize: 58,
     fontWeight: "500",
   },
-  weather: {
-    
-  },
+  weather: {},
   day: {
     // width를 고정값으로 입력하면 AOS/IOS별로, 화면 크기별로 레이아웃이 변경되니까
     // 이를 막기 위해 RN의 Dimensions API를 import하여 width에 기기 가로크기를 적용
@@ -114,10 +116,15 @@ const styles = StyleSheet.create({
   },
   temp: {
     marginTop: 50,
+    fontWeight: "600",
     fontSize: 178,
   },
   description: {
     marginTop: -30,
     fontSize: 60,
   },
+
+  tinyText: {
+    fontSize: 30,
+  }
 })
